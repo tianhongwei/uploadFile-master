@@ -5,8 +5,8 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.support.annotation.NonNull;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -18,6 +18,7 @@ import org.xutils.http.RequestParams;
 import org.xutils.x;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,18 +27,20 @@ import cn.bingoogolapple.photopicker.activity.BGAPhotoPickerActivity;
 import pub.devrel.easypermissions.EasyPermissions;
 
 /**
+ * 多文件上传
  * tianhongwei
  */
-public class MainActivity extends Activity implements EasyPermissions.PermissionCallbacks {
+public class MainActivity2 extends Activity implements EasyPermissions.PermissionCallbacks {
     private Activity mContext;
 
     private static final int REQUEST_CODE_PERMISSION_PHOTO_PICKER = 1;//图片权限code
     private static final int REQUEST_CODE_CHOOSE_PHOTO = 1;//选择图片code
+    private static final int MAX_COUNT_IMAGES = 9;
 
     ImageView image;
     TextView text;
 
-    private String photoPath = "";
+    ArrayList<String> imageList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +71,7 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
             File takePhotoDir = new File(AppConfig.APP_SOURCE_DIR);
 
             startActivityForResult(BGAPhotoPickerActivity.newIntent(mContext,
-                    takePhotoDir, 1, null, false), REQUEST_CODE_CHOOSE_PHOTO);
+                    takePhotoDir, MAX_COUNT_IMAGES, null, false), REQUEST_CODE_CHOOSE_PHOTO);
         } else {
             Toast.makeText(mContext, "需要开启图片相关权限", Toast.LENGTH_SHORT).show();
             EasyPermissions.requestPermissions(mContext,
@@ -109,11 +112,10 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
         switch (requestCode) {
             case REQUEST_CODE_CHOOSE_PHOTO:
                 //选择图片code
-                photoPath = BGAPhotoPickerActivity.getSelectedImages(data).get(0);
-                text.setText(photoPath);
-                image.setImageBitmap(BitmapFactory.decodeFile(photoPath));
-                //upLoadFile("http://192.168.1.226:8080/mServer20180129/localFile/uploadFile");
-                upLoadFile("http://192.168.1.91:8080/mServer20180129/localFile/uploadFile");
+                imageList = BGAPhotoPickerActivity.getSelectedImages(data);
+                image.setImageBitmap(BitmapFactory.decodeFile(imageList.get(0)));
+//                upLoadFile("http://192.168.1.226:8080/mServer20180129/localFile/uploadMulFile");
+                upLoadFile("http://192.168.1.91:8080/mServer20180129/localFile/uploadMulFile");
                 break;
         }
     }
@@ -131,7 +133,7 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
         map.put("fileName", "tianhongwei.png");
         map.put("fileDescribe", "此文件是我从Android客户端上传来的，用于测试接口所用。");
         map.put("userid", 52);
-        UpLoadOneFile(url, map, photoPath, new MyCallBack<String>() {
+        UpLoadMoreFile(url, map, imageList, new MyCallBack<String>() {
             @Override
             public void onError(Throwable ex, boolean isOnCallback) {
                 super.onError(ex, isOnCallback);
@@ -145,27 +147,25 @@ public class MainActivity extends Activity implements EasyPermissions.Permission
                 Toast.makeText(mContext, "上传成功!", Toast.LENGTH_SHORT).show();
                 text.append("\nresult:" + result);
                 dia.dismiss();
-
-                mContext.startActivity(new Intent(mContext, MainActivity2.class));
             }
         });
     }
-
 
     /**
      * 上传文件
      *
      * @param <T>
      */
-    public static <T> Callback.Cancelable UpLoadOneFile(String url, Map<String, Object> map, String imgpath, Callback.CommonCallback<T> callback) {
+    public static <T> Callback.Cancelable UpLoadMoreFile(String url, Map<String, Object> map, ArrayList<String> imagelist, Callback.CommonCallback<T> callback) {
         RequestParams params = new RequestParams(url);
         if (null != map) {
             for (Map.Entry<String, Object> entry : map.entrySet()) {
                 params.addParameter(entry.getKey(), entry.getValue());
             }
         }
-
-        params.addBodyParameter("oneFile", new File(imgpath));
+        for (int i = 0; i < imagelist.size(); i++) {
+            params.addBodyParameter("moreFile", new File(imagelist.get(i)));
+        }
 
         params.setMultipart(true);
         Callback.Cancelable cancelable = x.http().post(params, callback);
