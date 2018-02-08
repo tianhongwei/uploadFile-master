@@ -4,11 +4,6 @@ import android.os.Environment;
 
 import java.io.File;
 
-/**
- * 作者： 李杰
- * 时间：2016/12/12 17:29
- */
-
 public class AppConfig {
     /**
      * describe app资源根目录
